@@ -24,6 +24,8 @@ hidden_size = 20
 model_predicting = mf.make_prediction_model_file('./assets/model-30.hdf5',
                                        vocabulary,
                                        hidden_size=20)
+global temp_game_json
+temp_game_json = io.get_game_response().json()
 
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -32,13 +34,13 @@ title = html.H1(children='Shot2Vec')
 hockey_rink = html.Div([html.H2(id='rink_div', children='Recent Plays'),
                         dcc.Graph(id='rink_plot',
                                   figure=fn.make_rink_fig(1, 
-                                      io.get_game_response().json()),
+                                      temp_game_json),
                         #style={'height':255, 'width':600},
                        )])
 
 game_data = html.Div(id='game_json',
                      style={'display': 'none'},
-                     children='')#io.get_game_response().content)
+                     children='')#io.get_game_response().json())#io.get_game_response().content)
 
 get_game_button = html.Button(id='get game',
                               children='Get game data',
@@ -68,7 +70,7 @@ def update_game_json(n_clicks):
         [Input('step forward', 'n_clicks')],
         state=[State(component_id='game_json', component_property='children')])
 def nothing(n_steps, game_json):
-    return fn.make_rink_fig(n_steps, io.get_game_response().json())
+    return fn.make_rink_fig(n_steps, temp_game_json)#io.get_game_response().json())
 
 if __name__=='__main__':
     #print(fn.get_probs(fn.get_random_game()[:40]))

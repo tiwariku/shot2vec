@@ -205,7 +205,6 @@ def make_rink_fig(n_steps, game_json):
 
     window = 30
     cut = n_steps - window
-
     plays = dp.game_json_to_event_dicts(game_json)[:n_steps]
     data = [play_dict_to_plottable(play, max(i-cut,0)/window) for i, play in enumerate(plays)]
     #print(data)
