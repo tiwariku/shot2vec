@@ -7,14 +7,17 @@ import base64
 from numpy.random import randint 
 from requests_futures.sessions import FuturesSession
 
+import pickle
 import re
+
 import tensorflow as tf
 from tensorflow import keras
-import pickle
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
 import data_processing as dp
+
+import model_fns as mf
 
 
 #function
@@ -239,7 +242,6 @@ def get_probs(events=None):
         id_2_event, decoding dictionary
         probs, currently None, list of probabilites where index=id
     '''
-    print(events)    
     id_2_event = _temp_load_coarse_variable('id_2_event')
     event_2_id = _temp_load_coarse_variable('event_2_id')
     vocabulary = _temp_load_coarse_variable('vocabulary')
@@ -256,5 +258,19 @@ def get_probs(events=None):
     events_id = [event_2_id[event] for event in events_str]
 
     #load model and predictions
-    probs = None
+    model = mf.make_prediction_model_file('./assets/model-30.hdf5',
+                                       vocabulary,
+                                       hidden_size=20)
+    probs = mf.next_probs(events_id, model)
     return id_2_event, probs
+
+def make_probs_html(events):
+    '''
+    in: 
+        id_2_event,  decoding dictionary
+        probs, vector of probabilities
+    out: 
+        html P saying chance for next play to be a goal
+    '''
+    id_2_event, probs = get_probs(events)
+    return html.H2('Chance for next play to be a goal: {}'.format(.3))

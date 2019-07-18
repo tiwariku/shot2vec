@@ -25,8 +25,7 @@ hockey_rink = html.Div([html.H2('Recent Plays'),
                                   figure=fn.make_rink_fig(),
                         #style={'height':240, 'width':600},
                        )])
-predictions = html.H2(id='predictions',
-                      children='Predictions:')
+predictions = fn.make_probs_html(fn.get_random_game())
 
 layout_kids = [title, hockey_rink, predictions]
 layout = html.Div(layout_kids)
@@ -34,6 +33,6 @@ layout = html.Div(layout_kids)
 
 if __name__=='__main__':
     app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-    print(fn.get_probs(fn.get_random_game()))
+    #print(fn.get_probs(fn.get_random_game()[:40]))
     app.layout = layout 
     app.run_server(debug=True)
