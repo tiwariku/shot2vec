@@ -14,6 +14,7 @@ import pickle
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
+import data_processing as dp
 
 
 #function
@@ -235,19 +236,25 @@ def get_probs(events=None):
     In:
         events, list of in-game events in original json format
     Out:
-        id_2_event, decoding dictionary 
-        probs, list of probabilites where index=id
+        id_2_event, decoding dictionary
+        probs, currently None, list of probabilites where index=id
     '''
-
+    print(events)    
     id_2_event = _temp_load_coarse_variable('id_2_event')
-    print(id_2_event)
-    event_2_id = None
+    event_2_id = _temp_load_coarse_variable('event_2_id')
+    vocabulary = _temp_load_coarse_variable('vocabulary')
+
+    ###encode the list of jsons to list of ids 
+    ##strip off to intermediate dictionary
+    events_strip = dp.strip_game_events(events)
+    #encode dictionary to long to strings
+    events_str = [dp.make_event_string(event) for event in events_strip]
+    #string to coarse strings
+    regex = re.compile('[^a-zA-Z]')
+    events_str = [regex.sub('',event) for event in events_str]
+    #encode strings to ids
+    events_id = [event_2_id[event] for event in events_str]
+
+    #load model and predictions
     probs = None
-    ###encode the list of jsons to lost of ids 
-    #this is temproary with the coarse model
-    events_str = None
-    events_id = None# [event_2_id for event in events_str]
-
-    #load model and train
-
-    return id_2_event 
+    return id_2_event, probs

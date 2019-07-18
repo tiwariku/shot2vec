@@ -34,6 +34,6 @@ layout = html.Div(layout_kids)
 
 if __name__=='__main__':
     app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-    fn.get_probs()
+    print(fn.get_probs(fn.get_random_game()))
     app.layout = layout 
     app.run_server(debug=True)
