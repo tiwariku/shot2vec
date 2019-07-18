@@ -273,4 +273,6 @@ def make_probs_html(events):
         html P saying chance for next play to be a goal
     '''
     id_2_event, probs = get_probs(events)
+    
     return html.H2('Chance for next play to be a goal: {}'.format(.3))
+

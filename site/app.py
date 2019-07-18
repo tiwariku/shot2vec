@@ -14,7 +14,6 @@ session = FuturesSession(max_workers=2)
 ##external asses
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-
 ##callbacks
 
 
@@ -23,7 +22,7 @@ title = html.H1(children='Shot2Vec')
 hockey_rink = html.Div([html.H2('Recent Plays'),
                         dcc.Graph(id='rink_plot',
                                   figure=fn.make_rink_fig(),
-                        #style={'height':240, 'width':600},
+                        #style={'height':255, 'width':600},
                        )])
 predictions = fn.make_probs_html(fn.get_random_game())
 
