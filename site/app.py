@@ -37,6 +37,7 @@ hockey_rink = html.Div([html.H2(id='rink_div', children='Recent Plays'),
                                       temp_game_json),
                         #style={'height':255, 'width':600},
                        )])
+event_list = html.P(id='recent plays', children='No plays yet')
 
 game_data = html.Div(id='game_json',
                      style={'display': 'none'},
@@ -54,24 +55,36 @@ buttons = html.Div(children=[get_game_button, step_forward_buttom],
                    style={'columnCount':2}
                   )
 
-layout_kids = [title, buttons, hockey_rink, game_data]
+layout_kids = [title, buttons, hockey_rink, event_list, game_data]
 layout = html.Div(layout_kids)
 app.layout = layout
 # callbacks
 @app.callback(
     Output(component_id='game_json', component_property='children'),
-    [Input('get game', 'n_clicks')],
-    #state=[State(component_id='game_json', component_property='style')]
-    )
+    [Input('get game', 'n_clicks')],)
 def update_game_json(n_clicks):
-    return '   '#io.get_game_response().content#html.Div('BYE!{}'.format(n_clicks))
+    return ''#io.get_game_response().content#html.Div('BYE!{}'.format(n_clicks))
 
 @app.callback(Output(component_id='rink_plot', component_property='figure'),
         [Input('step forward', 'n_clicks')],
         state=[State(component_id='game_json', component_property='children')])
-def nothing(n_steps, game_json):
+def step_forward(n_steps, game_json):
     return fn.make_rink_fig(n_steps, temp_game_json)#io.get_game_response().json())
 
+@app.callback(Output(component_id='recent plays', 
+                     component_property='children'), 
+              [Input('step forward', 'n_clicks')],
+              #state=[State(componenet_id='game_json', 
+              #             component_property='children')]
+              )
+def update_recent_plays(n_steps):
+    window = 5
+    plays = fn.get_recent_plays_string(n_steps, temp_game_json)
+    return str(plays)#', '.join()
+
+
+
+
+
 if __name__=='__main__':
-    #print(fn.get_probs(fn.get_random_game()[:40]))
     app.run_server(debug=True)

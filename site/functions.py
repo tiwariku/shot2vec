@@ -159,6 +159,9 @@ def play_dict_to_plottable(event_json, opacity=1):
     ev_dict['y'] = [y,]
     return ev_dict
 
+def play_dict_to_string(event_json):
+    return event_json['result']['event']
+
 def get_example_data(window=10):
     def to_data_dict(event):
         event = event.split('_')
@@ -240,6 +243,15 @@ def make_rink_fig(n_steps, game_json):
                      range=[-42.5, 42.5],
                      tickvals=[])
     return fig
+
+def get_recent_plays_string(n_steps, game_json):
+    '''
+    returns a string of the 5 most recent plays
+    '''
+    plays = dp.game_json_to_event_dicts(game_json)[max(0, n_steps-5):n_steps]
+    string = ', '.join([play_dict_to_string(play) for play in plays])
+    return string
+
 
 def _temp_load_coarse_variable(filename, assetdir = './assets/'):
     '''
