@@ -7,8 +7,132 @@ import base64
 from numpy.random import randint 
 from requests_futures.sessions import FuturesSession
 
+import re
+import tensorflow as tf
+from tensorflow import keras
+import pickle
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Sequential
+from tensorflow.keras import layers
+
 
 #function
+def load_games_list(filename='corpus.txt', verbose = False):
+    '''
+    in: filename, the corpus
+    out: list of list of events in each game
+    '''
+    if verbose:
+        print('Reading corpus')
+    with open(filename,'r') as f:
+        return [game.split() for game in f.readlines()]
+
+def strip_aZ(games_list):
+    '''
+    in: list of lists of games
+    out: stripped to just ^a-zA-Z
+    '''
+    print('Stripping games_list of non-[^a-zA-Z] characters')
+    regex = re.compile('[^a-zA-Z]')
+    games_list = [[regex.sub('',event) for event in game] for game in games_list]
+    #print(games_list[:3][:5])
+    return games_list
+
+def make_vocabulary(games_list, verbose=False):
+    '''
+    in: list of lists of games
+    out:
+        vocabulary, the number of distinct events
+            and
+        event_2_ind, a lookup dictionary for the index of each event
+    '''
+    if verbose:
+        print('Constructing vocabular and event2id dictionary')
+
+    #full events list to make vocabulary and ids
+    events = flatten_games_to_events(games_list)
+    #select distinct
+    distinct_events = list(set(events))
+    vocabulary = len(distinct_events)
+    #make id dictionary
+    event_2_id = {}
+    for event in distinct_events:
+        event_2_id[event] = distinct_events.index(event)
+    id_2_event = dict(zip(event_2_id.values(), event_2_id.keys()))
+    return vocabulary, event_2_id, id_2_event
+
+def games_list_to_ids(games_list, event_2_id, verbose=False):
+    '''
+    in: games_list, list of lists of events in string format
+        event_2_id, id dictionary constructed from full vocabulary
+    out:
+        games_list, list of lists of events in id format
+    '''
+    if verbose:
+        print('Encoding a list of games by event id')
+    return [[event_2_id[event] for event in game] for game in games_list]
+
+def id_list_to_event(id_list, id_2_event, verbose=False):
+    '''
+    in: id_list a list of events in id format
+        id_2_event: lookup dictionary
+    out:
+        event_list: a list of events in event format
+    '''
+    return [id_2_event[idd] for idd in id_list ]
+
+def train_test_split_games_list(games_list, train_frac = .8, verbose=False):
+    if verbose:
+        print(f'Making train test split. train_frac = {train_frac}')
+    split_ind = int(len(games_list)*train_frac)
+    train = games_list[:split_ind]
+    test = games_list[split_ind:]
+    return train, test
+
+def flatten_games_to_events(games_list):
+    return [event for game in games_list
+                     for event in game]
+
+def load_data(filename):
+    '''
+    in: filename, a .txt file whose lines are nhl games where events
+    are represented by strings separated by spaces
+    '''
+    games_list = load_games_list('corpus.txt',
+                                 verbose=True)[:200]
+
+    ###This is to make things fast for now
+    games_list = strip_aZ(games_list)
+
+    #building word to index dictionary and vocabulary
+    vocabulary, event_2_id, id_2_event = make_vocabulary(games_list,
+                                                         verbose=True)
+
+    #convert to ids
+    games_list = games_list_to_ids(games_list,
+                                   event_2_id,
+                                   verbose=True)
+
+    #train test split
+    train_data, test_data = train_test_split_games_list(games_list,
+                                                        verbose=True)
+    #flatten training (testing) data to list of events
+    train_data = flatten_games_to_events(train_data)
+    test_data = flatten_games_to_events(test_data)
+    valid_data = None
+
+    reversed_dictionary = None
+
+    return (
+            train_data,
+            valid_data,
+            test_data,
+            vocabulary,
+            reversed_dictionary,
+            event_2_id,
+            id_2_event
+           )
+     
 def getcoords(event_json, sbin=10):
     play_coordinates = event_json['coordinates']
     x, y = None, None
@@ -98,6 +222,32 @@ def make_rink_fig():
                      range=[-42.5, 42.5],
                      tickvals=[])
     return fig
-    
-def get_probs():
-    return None
+
+def _temp_load_coarse_variable(filename, assetdir = './assets/'):
+    '''
+    '''
+    with open('{}{}.pkl'.format(assetdir, filename), 'rb') as f:
+        obj = pickle.load(f)
+    return obj
+
+def get_probs(events=None):
+    '''
+    In:
+        events, list of in-game events in original json format
+    Out:
+        id_2_event, decoding dictionary 
+        probs, list of probabilites where index=id
+    '''
+
+    id_2_event = _temp_load_coarse_variable('id_2_event')
+    print(id_2_event)
+    event_2_id = None
+    probs = None
+    ###encode the list of jsons to lost of ids 
+    #this is temproary with the coarse model
+    events_str = None
+    events_id = None# [event_2_id for event in events_str]
+
+    #load model and train
+
+    return id_2_event 
