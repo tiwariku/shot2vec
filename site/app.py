@@ -4,7 +4,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import base64
 from numpy.random import randint 
 from requests_futures.sessions import FuturesSession
@@ -31,12 +31,14 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 title = html.H1(children='Shot2Vec')
 hockey_rink = html.Div([html.H2(id='rink_div', children='Recent Plays'),
                         dcc.Graph(id='rink_plot',
-                                  figure=fn.make_rink_fig(),
+                                  figure=fn.make_rink_fig(1, 
+                                      io.get_game_response().json()),
                         #style={'height':255, 'width':600},
                        )])
 
 game_data = html.Div(id='game_json',
-                     style={'display': 'none'})
+                     style={'display': 'none'},
+                     children='')#io.get_game_response().content)
 
 get_game_button = html.Button(id='get game',
                               children='Get game data',
@@ -60,9 +62,13 @@ app.layout = layout
     #state=[State(component_id='game_json', component_property='style')]
     )
 def update_game_json(n_clicks):
-    return io.get_game_json()#html.Div('BYE!{}'.format(n_clicks))
+    return '   '#io.get_game_response().content#html.Div('BYE!{}'.format(n_clicks))
 
-
+@app.callback(Output(component_id='rink_plot', component_property='figure'),
+        [Input('step forward', 'n_clicks')],
+        state=[State(component_id='game_json', component_property='children')])
+def nothing(n_steps, game_json):
+    return fn.make_rink_fig(n_steps, io.get_game_response().json())
 
 if __name__=='__main__':
     #print(fn.get_probs(fn.get_random_game()[:40]))
