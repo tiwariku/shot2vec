@@ -211,7 +211,7 @@ def make_rink_fig(n_steps, game_json):
     plays = dp.game_json_to_event_dicts(game_json)[:n_steps]
     data = [play_dict_to_plottable(play, max(i-cut,0)/window) for i, play in enumerate(plays)]
     #print(data)
-    data[-1]['marker']['size']=20
+    data[-1]['marker']['size']=30
 
     layout_dict = dict(#title='',
                        showlegend=False,
@@ -268,9 +268,27 @@ def get_probs(n_steps, game_json, model_predicting):
         id_2_event, decoding dictionary
         probs, currently None, list of probabilites where index=id
     '''
-    id_2_event = _temp_load_coarse_variable('id_2_event')
+
+    events_id = get_events_id(n_steps, game_json)
+
+    #load model
+    #probs = mf.next_probs([0, 6,7,8], model_predicting)
+    probs = events_id
+    return 'RNN input: {}'.format(probs)
+
+def make_probs_html(events):
+    '''
+    in: 
+        id_2_event,  decoding dictionary
+        probs, vector of probabilities
+    out: 
+        html P saying chance for next play to be a goal
+    '''
+    #probs = get_probs(events)
+    return html.H2('Chance for goal: {}'.format(.3))
+
+def get_events_id(n_steps, game_json):
     event_2_id = _temp_load_coarse_variable('event_2_id')
-    vocabulary = _temp_load_coarse_variable('vocabulary')
     plays = dp.game_json_to_event_dicts(game_json)[:n_steps]
     ###encode the list of jsons to list of ids 
     ##strip off to intermediate dictionary
@@ -282,25 +300,12 @@ def get_probs(n_steps, game_json, model_predicting):
     events_str = [regex.sub('', event) for event in events_str]
     #encode strings to ids
     events_id = [event_2_id[event] for event in events_str]
-    #return events_id, events_str
+    return events_id
+ 
 
-    #load model and predictions
-    model = mf.make_prediction_model_file('./assets/model-30.hdf5',
-                                       vocabulary,
-                                       hidden_size=20)
-    #probs = mf.next_probs(events_id, model_predicting)
-    probs = events_id
-    return probs
-
-def make_probs_html(events):
-    '''
-    in: 
-        id_2_event,  decoding dictionary
-        probs, vector of probabilities
-    out: 
-        html P saying chance for next play to be a goal
-    '''
-    id_2_event, probs = get_probs(events)
-    
-    return html.H2('Chance for next play to be a goal: {}'.format(.3))
-
+id_2_event = _temp_load_coarse_variable('id_2_event')
+event_2_id = _temp_load_coarse_variable('event_2_id')
+vocabulary = _temp_load_coarse_variable('vocabulary')
+model = mf.make_prediction_model_file('./assets/model-30.hdf5',
+                                   vocabulary,
+                                   hidden_size=20)

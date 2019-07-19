@@ -30,18 +30,25 @@ temp_game_json = io.get_game_response().json()
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 ## html elements
+game_data = html.Div(id='game_json',
+                     style={'display': 'none'},
+                     children='')#io.get_game_response().json())#io.get_game_response().content)
+
 title = html.H1(children='Shot2Vec')
+
 hockey_rink = html.Div([html.H2(id='rink_div', children='Recent Plays'),
                         dcc.Graph(id='rink_plot',
                                   figure=fn.make_rink_fig(1, 
                                       temp_game_json),
                         #style={'height':255, 'width':600},
                        )])
-event_list = html.P(id='recent plays', children='No plays yet')
 
-game_data = html.Div(id='game_json',
-                     style={'display': 'none'},
-                     children='')#io.get_game_response().json())#io.get_game_response().content)
+event_list = html.Div(id='recent plays Div', 
+                      children=[html.H4(id='recent plays H4', 
+                                        children='Recent plays'),
+                                html.P(id='recent plays', 
+                                       children='No plays yet')])
+
 
 get_game_button = html.Button(id='get game',
                               children='Get game data',
@@ -55,7 +62,10 @@ buttons = html.Div(children=[get_game_button, step_forward_buttom],
                    style={'columnCount':2}
                   )
 
-probs = html.P(id='probs', children='')
+probs = html.Div(id='probs Div', 
+                 children = [html.H4(id='probs H5', children='Next event:'),
+                             html.P(id='probs', children='RNN OUTPUT')])
+
 
 layout_kids = [title, buttons, hockey_rink, event_list, game_data, probs]
 layout = html.Div(layout_kids)
