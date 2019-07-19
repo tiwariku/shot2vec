@@ -252,15 +252,15 @@ def get_recent_plays_string(n_steps, game_json):
     string = ', '.join([play_dict_to_string(play) for play in plays])
     return string
 
-
-def _temp_load_coarse_variable(filename, assetdir = './assets/'):
+def _temp_load_coarse_variable(filename, assetdir='./assets/'):
     '''
+    loads a pickle object if it extists
     '''
     with open('{}{}.pkl'.format(assetdir, filename), 'rb') as f:
         obj = pickle.load(f)
     return obj
 
-def get_probs(events=None):
+def get_probs(n_steps, game_json, model_predicting):
     '''
     In:
         events, list of in-game events in original json format
@@ -271,24 +271,26 @@ def get_probs(events=None):
     id_2_event = _temp_load_coarse_variable('id_2_event')
     event_2_id = _temp_load_coarse_variable('event_2_id')
     vocabulary = _temp_load_coarse_variable('vocabulary')
-
+    plays = dp.game_json_to_event_dicts(game_json)[:n_steps]
     ###encode the list of jsons to list of ids 
     ##strip off to intermediate dictionary
-    events_strip = dp.strip_game_events(events)
+    events_strip = dp.strip_game_events(plays)
     #encode dictionary to long to strings
     events_str = [dp.make_event_string(event) for event in events_strip]
     #string to coarse strings
     regex = re.compile('[^a-zA-Z]')
-    events_str = [regex.sub('',event) for event in events_str]
+    events_str = [regex.sub('', event) for event in events_str]
     #encode strings to ids
     events_id = [event_2_id[event] for event in events_str]
+    #return events_id, events_str
 
     #load model and predictions
     model = mf.make_prediction_model_file('./assets/model-30.hdf5',
                                        vocabulary,
                                        hidden_size=20)
-    probs = mf.next_probs(events_id, model)
-    return id_2_event, probs
+    #probs = mf.next_probs(events_id, model_predicting)
+    probs = events_id
+    return probs
 
 def make_probs_html(events):
     '''

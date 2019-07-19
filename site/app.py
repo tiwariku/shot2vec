@@ -55,7 +55,9 @@ buttons = html.Div(children=[get_game_button, step_forward_buttom],
                    style={'columnCount':2}
                   )
 
-layout_kids = [title, buttons, hockey_rink, event_list, game_data]
+probs = html.P(id='probs', children='')
+
+layout_kids = [title, buttons, hockey_rink, event_list, game_data, probs]
 layout = html.Div(layout_kids)
 app.layout = layout
 # callbacks
@@ -74,14 +76,19 @@ def step_forward(n_steps, game_json):
 @app.callback(Output(component_id='recent plays', 
                      component_property='children'), 
               [Input('step forward', 'n_clicks')],
-              #state=[State(componenet_id='game_json', 
-              #             component_property='children')]
               )
 def update_recent_plays(n_steps):
     window = 5
     plays = fn.get_recent_plays_string(n_steps, temp_game_json)
     return str(plays)#', '.join()
 
+
+@app.callback(Output(component_id='probs', 
+                     component_property='children'), 
+              [Input('step forward', 'n_clicks')],
+              )
+def update_probs(n_steps):
+    return str(fn.get_probs(n_steps, temp_game_json, model_predicting))
 
 
 
