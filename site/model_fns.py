@@ -99,34 +99,48 @@ class KerasBatchGenerator_rand(object):
         self.rand = random
         self.rand.seed(self.seed)
 
-def make_LSTM_RNN(vocabulary, hidden_size, num_steps, use_dropout=True):
+def make_LSTM_RNN(vocabulary, hidden_size, num_steps, dropout=.5):
+    '''
+    in: vocabulary, the number of distinct words in the corpus
+        hidden_size, size of LSTM layers
+        num_steps, size of input, None for arbitrary
+        dropout, the dropout parameter
+    out: model, the keras LSTM RNN
+    '''
     model = Sequential()
     model.add(layers.Embedding(vocabulary,
                                hidden_size,
                                input_length=num_steps))
     model.add(layers.LSTM(hidden_size, return_sequences=True))
     model.add(layers.LSTM(hidden_size, return_sequences=True))
-    if use_dropout:
-        model.add(layers.Dropout(0.5))
+    model.add(layers.Dropout(dropout))
     model.add(layers.TimeDistributed(layers.Dense(vocabulary,
                                                   activation='softmax')))
     return model
 
 def make_prediction_model_file(weights_file, vocabulary, hidden_size):
+    '''
+    in: weights_file, file with weights from training, include extension
+        vocabulary, used to determine size of embedding layers
+        hidden_size, size of LSTM layers
+    out:
+        model_predicting, a shot2vec model that can accept arbitrary length
+                          input
+    '''
     model_predicting = make_LSTM_RNN(vocabulary, hidden_size, None)
     model_predicting.load_weights(weights_file)
     return model_predicting
 
 def next_probs(seed_list, model_predictining):
     '''
-    seed_list is the game so far in event format
+    in:
+        seed_list: the game so far in id format
+    out: 
+        vector of probabilities, index corresponds to id
     '''
     model_predictining.reset_states()
     for seed in seed_list[:-1]:
         model_predictining.predict([seed,], verbose=0)
     probs_vector = model_predictining.predict([seed_list[-1],],
-                                          verbose=1)[0][0]
-    #probs = {}
-    #for i, prob in enumerate(probs_vector):
-    #    probs[id_2_event[i]]=prob
+                                              verbose=1)[0][0]
     return probs_vector
