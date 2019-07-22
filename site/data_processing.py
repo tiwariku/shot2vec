@@ -1,4 +1,17 @@
 import numpy as np
+import json
+
+def game_json_to_event_dicts(game_json):
+    '''
+    in: game_json, a string with the json for the game
+    out: a list dictionaries each representing an play
+    '''
+    d = game_json#json.loads(game_json) 
+    if 'liveData' in d.keys():
+        return [play for play in d['liveData']['plays']['allPlays']]
+    else:
+        return []
+
 
 def strip_event(play):
     '''
