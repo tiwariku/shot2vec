@@ -65,3 +65,12 @@ def get_year_games(year, game_type='02', max_workers=10, verbose=False):
         if verbose and i%100 == 0:
             print(f'\t game {i+1}')
     return games
+
+def cache_seasons(start_year=2010, end_year=2019):
+    '''
+    in: start_year, first year to download
+        stop_year, last year to downloads
+    >>>saves season result gsons to cache using get_year_games
+    '''
+    for year in range(start_year, end_year+1):
+        get_year_games(year, verbose=1)
