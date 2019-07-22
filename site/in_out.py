@@ -23,20 +23,19 @@ def get_game_response(game_number='0400', year='2015', game_type='02',
                                  game_type=game_type)
     return future.result()
 
-
 def get_game_future(session, game_number='0400', year='2015', game_type='02'):
     '''
     in: session, a FuturesSession object for making the asynchronous requests,
         game_number, year, game_type in string format
     out: future associated with request
     '''
-    game_ID = f'{year}{game_type}{game_number}'
-    url = f'https://statsapi.web.nhl.com/api/v1/game/{game_ID}/feed/live'
+    game_id = f'{year}{game_type}{game_number}'
+    url = f'https://statsapi.web.nhl.com/api/v1/game/{game_id}/feed/live'
     return session.get(url)
 
-@checkpoint(key = lambda args, kwargs: (str(args)+'.p').encode(),
-                work_dir='./cache'.encode(),
-                refresh=False)
+@checkpoint(key=lambda args, kwargs: (str(args)+'.p').encode(),
+            work_dir='./cache'.encode(),
+            refresh=False)
 def get_year_games(year, game_type='02', max_workers=10, verbose=False):
     '''
     in: year, the year to query
@@ -46,9 +45,9 @@ def get_year_games(year, game_type='02', max_workers=10, verbose=False):
         associated game
     '''
     year = str(year).zfill(4)
-    session = FuturesSession(max_workers=max_workers) 
+    session = FuturesSession(max_workers=max_workers)
     max_games = 1200
-    game_numbers = range(1,max_games)
+    game_numbers = range(1, max_games)
     futures = []
     for game_number in game_numbers:
         game_number = str(game_number).zfill(4)
@@ -57,14 +56,12 @@ def get_year_games(year, game_type='02', max_workers=10, verbose=False):
     if verbose:
         print(f'Got {year} futures')
     games = []
-    for i,future in enumerate(futures):
-        d = future.result().json()
-        if 'liveData' in d.keys():
-            games.append(d)
+    for i, future in enumerate(futures):
+        game_json = future.result().json()
+        if 'liveData' in game_json.keys():
+            games.append(game_json)
         else:
             print(f'No game data for game {i+1}')
-        if verbose and i%100==1:
+        if verbose and i%100 == 0:
             print(f'\t game {i+1}')
     return games
-
-
