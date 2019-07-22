@@ -1,16 +1,21 @@
+'''
+This module handles manipulating the queried data from the NHL api into 
+the form accepted by the shot2vec models
+@tiwariku
+2019-07-22
+'''
+
 import numpy as np
-import json
 
 def game_json_to_event_dicts(game_json):
     '''
     in: game_json, a string with the json for the game
     out: a list dictionaries each representing an play
     '''
-    d = game_json#json.loads(game_json) 
+    d = game_json#json.loads(game_json)
     if 'liveData' in d.keys():
         return [play for play in d['liveData']['plays']['allPlays']]
-    else:
-        return []
+    return []
 
 
 def strip_event(play):
@@ -64,6 +69,7 @@ def make_delta_time(game_events):
         else:
             play['DeltaTime'] = bin_DT(play['periodTime']-
                                        game_events[i-1]['periodTime'])
+
 def make_event_string(event):
     '''
     in: stripped event
@@ -74,5 +80,26 @@ def make_event_string(event):
         coordstring = '{}_{}'.format(event['Coords'][0],
                                      event['Coords'][1])
     return '{}_{}_{}'.format(event['Type'],
-                                coordstring,
-                                event['DeltaTime'])
+                             coordstring,
+                             event['DeltaTime'])
+
+
+def game_to_plays(game, strip_fn=lambda x: x):
+    '''
+    in: game, a game_json as returned by the NHL api
+        strip_fn (optional), a function to strip the event dictionaries
+    out:
+        game_plays: a list of dictionaries representing each play in the game
+    '''
+    game_plays = [strip_fn(play) for play in
+                  game['liveData']['plays']['allPlays']]
+    return game_plays
+
+def strip_name_only(play):
+    '''
+    in: an event dictionary in format given by nhl api
+    out: just the event type
+    '''
+    stripped_play = {}
+    stripped_play['Type'] = play['result']['event']
+    return stripped_play
