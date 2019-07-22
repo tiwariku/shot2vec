@@ -68,8 +68,7 @@ probs = html.Div(id='probs Div',
 
 
 layout_kids = [title, buttons, hockey_rink, event_list, game_data, probs]
-layout = html.Div(layout_kids)
-app.layout = layout
+layout = html.Div(layout_kidsapp.layout = layout
 # callbacks
 @app.callback(
     Output(component_id='game_json', component_property='children'),
