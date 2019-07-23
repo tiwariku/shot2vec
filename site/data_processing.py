@@ -24,23 +24,6 @@ def unpickle_it(name):
     with open(f'{name}.pkl', 'rb') as pkfile:
         return pickle.load(pkfile)
 
-def get_corpus(start_year=2010, stop_year=2019):
-    '''
-    in: start_year, first year to download
-        stop_year, last year to downloads
-    out: corpus, a list of games, where each 'game' is a list of plays, and hte
-         plays are string represenations of dicts
-    >>>perhaps this belongs in the model module
-    >>>downloads (or reads cache) all game data form start_year to stop_year
-       converts games to plays
-    '''
-    games, corpus = [], []
-    for year in range(start_year, stop_year+1):
-        games.extend(io.get_year_games(year))
-    for game in games:
-        corpus.append(game_to_plays(game, strip_fn=strip_name_only))
-    return corpus
-
 def game_to_plays(game, strip_fn=lambda x: x):
     '''
     in: game, a game_json as returned by the NHL api
@@ -62,6 +45,25 @@ def strip_name_only(play):
     stripped_play = {}
     stripped_play['Type'] = play['result']['event']
     return stripped_play
+
+def get_corpus(start_year=2010, stop_year=2019, strip_fn=strip_name_only):
+    '''
+    in: start_year, first year to download
+        stop_year,  last year to downloads
+        strip_fn,   optional, a function that takes a play and returns a dict
+                    of a stripped version, default, just the type
+    out: corpus,    a list of games, where each 'game' is a list of plays, and
+                    hte plays are string represenations of dicts
+    >>>perhaps this belongs in the model module
+    >>>downloads (or reads cache) all game data form start_year to stop_year
+       converts games to plays
+    '''
+    games, corpus = [], []
+    for year in range(start_year, stop_year+1):
+        games.extend(io.get_year_games(year))
+    for game in games:
+        corpus.append(game_to_plays(game, strip_fn=strip_fn))
+    return corpus
 
 def flatten_games(corpus):
     '''
