@@ -142,5 +142,5 @@ def next_probs(seed_list, model_predictining):
     for seed in seed_list[:-1]:
         model_predictining.predict([seed,], verbose=0)
     probs_vector = model_predictining.predict([seed_list[-1],],
-                                              verbose=1)[0][0]
+                                              verbose=0)[0][0]
     return probs_vector

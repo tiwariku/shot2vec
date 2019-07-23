@@ -127,13 +127,13 @@ def corpus_to_keras(corpus_filename, pad_play=None):
     #building word to index dictionary and vocabulary
     play_to_id, id_to_play, vocabulary = make_vocabulary(corpus,
                                                          pad_play=pad_play,
-                                                         verbose=1)
+                                                         verbose=0)
 
     #convert to ids
     corpus_id = [[play_to_id[play] for play in game] for game in corpus]
 
     #train test split
-    train_data, test_data = train_test_split(corpus_id, verbose=True)
+    train_data, test_data = train_test_split(corpus_id, verbose=False)
 
     #flatten training (testing) data to list of events
     #train_data = flatten_games_to_events(train_data)
