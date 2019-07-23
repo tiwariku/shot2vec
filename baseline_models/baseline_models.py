@@ -8,9 +8,9 @@ by each type of play.
 2019-07-23
 '''
 
-from sklearn import base
-import numpy as np
 from collections import defaultdict
+import numpy as np
+from sklearn import base
 import data_processing as dp
 
 class UncorrelatedEstimator(base.BaseEstimator, base.RegressorMixin):
@@ -24,34 +24,40 @@ class UncorrelatedEstimator(base.BaseEstimator, base.RegressorMixin):
         initialize instance with unfilled default dict for the idd distribution
         '''
         self.probs = defaultdict(float)
-    
-    def fit(self, X, y):
+        self.keys = []
+        self.probs = []
+
+    def fit(self, Xdata, ydata):
         '''
-        in: X, a list of plays
-            y, another list of plays, unused in this mode
+        in: Xdata, a list of plays
+            ydata, another list of plays, unused in this mode
         out: self, for whatever reason
-        build the iid distribution 
+        build the iid distribution
         '''
         count = defaultdict(int)
         total = 0
-        for play in X:
+        for play in Xdata:
             count[play] += 1
             total += 1
+        tempdict = {}
+
         for play in count:
-            self.probs[play] = count[play]/total
+            tempdict[play] = count[play]/total
+
+        self.keys, self.probs = [], []
+        for key, prob in tempdict.items():
+            self.keys.append(key)
+            self.probs.append(prob)
+
         return self
-    
-    def predict(self, X):
+
+    def predict(self, Xdata):
         '''
-        in: X, a list of plays (for which the next lay should be predicted)
-        out: y, a list of iid predictions 
+        in: Xdata, a list of plays (for which the next lay should be predicted)
+        out: y, a list of iid predictions
         sample from the IDI
         '''
-        keys, probs  = [], []
-        for key, prob in self.probs.items():
-            keys.append(key)
-            probs.append(prob)
-        return [np.random.choice(keys, p=probs) for x in X]
+        return [np.random.choice(self.keys, p=self.probs) for x in Xdata]
 
 class MarkovEstimator(base.BaseEstimator, base.RegressorMixin):
     '''
@@ -64,44 +70,52 @@ class MarkovEstimator(base.BaseEstimator, base.RegressorMixin):
         initialize instance with unfilled default dict for the idd distribution
         '''
         self.probs = defaultdict(float)
-    
-    def fit(self, X, y):
+        self.keys = []
+        self.probs = []
+
+    def fit(self, Xdata, ydata):
         '''
-        in: X, a list of plays
-            y, another list of plays, unused in this mode
+        in: Xdata, a list of plays
+            ydata, another list of plays, unused in this mode
         out: self, for whatever reason
-        build the iid distribution 
+        build the iid distribution
         '''
         count = defaultdict(int)
         total = 0
-        for play in X:
+        for play in Xdata:
             count[play] += 1
             total += 1
+        tempdict = {}
+
         for play in count:
-            self.probs[play] = count[play]/total
+            tempdict[play] = count[play]/total
+
+        self.keys, self.probs = [], []
+        for key, prob in tempdict.items():
+            self.keys.append(key)
+            self.probs.append(prob)
+
         return self
-    
-    def predict(self, X):
+
+    def predict(self, Xdata):
         '''
-        in: X, a list of plays (for which the next lay should be predicted)
-        out: y, a list of iid predictions 
+        in: Xdata, a list of plays (for which the next lay should be predicted)
+        out: y, a list of iid predictions
         sample from the IDI
         '''
-        keys, probs  = [], []
-        for key, prob in self.probs.items():
-            keys.append(key)
-            probs.append(prob)
-        return [np.random.choice(keys, p=probs) for x in X]
+        return [np.random.choice(self.keys, p=self.probs) for x in Xdata]
 
 if __name__ == '__main__':
-    corpus = dp.flatten_games(dp.unpickle_it('../../assets/corpi/coarse_corpus'))
-    print(f'length of corpus: {len(corpus)}')
-    
-    X = corpus[:-1] 
-    y = corpus[1:]
-    UE = UncorrelatedEstimator()
-    UE.fit(X, y)
-    correct_est = [y[i]==y_esti for i, y_esti in enumerate(UE.predict(X))]
-    print(f'Uncorrelated validation accuracy: {sum(correct_est)/len(correct_est)}')
-    
-
+    UE = MarkovEstimator()
+    STOP = 100000
+    CORPUS = dp.flatten_games(dp.unpickle_it('../assets/corpi/full_coords_bin_10'))
+    CORPUS = CORPUS[:STOP]
+    print(f'length of corpus: {len(CORPUS)}')
+    X = CORPUS[:-1]
+    Y = CORPUS[1:]
+    UE.fit(X, Y)
+    print('Fit complete')
+    Y_PRED = UE.predict(X)
+    print('Predictions complete')
+    VAL_ACC = sum(np.array(Y_PRED) == np.array(Y))/len(Y)
+    print(f'Uncorrelated validation accuracy: {VAL_ACC}')
