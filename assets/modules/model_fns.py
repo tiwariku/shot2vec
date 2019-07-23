@@ -3,13 +3,13 @@ This module contians functions and classes directly related to trainign and
 predicting shot2vec RNN models. Data processing is handled separately
 '''
 
+import random
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
 import numpy as np
-import random
 
 class KerasBatchGenerator(object):
     '''
