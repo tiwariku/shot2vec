@@ -1,0 +1,14 @@
+CORPUS: full_coords_bin_10
+
+MarkovEstimator()
+length of corpus: 400000
+Fit complete
+Predictions complete
+Validation accuracy: 0.11607779019447549
+
+
+UncorrelatedEstimator()
+length of corpus: 400000
+Fit complete
+Predictions complete
+Validation accuracy: 0.026242565606414015
