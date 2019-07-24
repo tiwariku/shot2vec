@@ -27,27 +27,29 @@ class UncorrelatedEstimator(base.BaseEstimator, base.RegressorMixin):
         self.probs = defaultdict(float)
         self.keys = []
         self.probs = []
+        self.xtrain = []
 
-    def fit(self, Xdata, ydata):
+    def fit(self, xdata, ydata):
         '''
-        in: Xdata, a list of plays
+        in: xdata, a list of plays
             ydata, another list of plays, unused in this mode
         out: self, for whatever reason
         build the iid distribution
         '''
-        tempdict = Counter(Xdata)
+        self.xtrain = xdata
+        tempdict = Counter(ydata)
         total = sum(tempdict.values())
         self.keys = list(tempdict.keys())
         self.probs = np.array(list(tempdict.values()))/total
         return self
 
-    def predict(self, Xdata):
+    def predict(self, xdata):
         '''
-        in: Xdata, a list of plays (for which the next lay should be predicted)
+        in: xdata, a list of plays (for which the next lay should be predicted)
         out: y, a list of iid predictions
         sample from the IDI
         '''
-        return [np.random.choice(self.keys, p=self.probs) for x in Xdata]
+        return [np.random.choice(self.keys, p=self.probs) for x in xdata]
 
 class MarkovEstimator(base.BaseEstimator, base.RegressorMixin):
     '''
@@ -62,15 +64,15 @@ class MarkovEstimator(base.BaseEstimator, base.RegressorMixin):
         self.keys_dict = {}
         self.probs_dict = {}
 
-    def fit(self, Xdata, ydata):
+    def fit(self, xdata, ydata):
         '''
-        in: Xdata, a list of plays
+        in: xdata, a list of plays
             ydata, another list of plays, unused in this mode
         out: self, for whatever reason
         build the iid distribution
         '''
         play_next_plays = defaultdict(list)
-        for i, play in enumerate(Xdata):
+        for i, play in enumerate(xdata):
             play_next_plays[play].append(ydata[i])
 
         for play, next_plays in play_next_plays.items():
@@ -80,28 +82,50 @@ class MarkovEstimator(base.BaseEstimator, base.RegressorMixin):
             self.probs_dict[play] = np.array(list(temp_counter.values()))/num
         return self
 
-    def predict(self, Xdata):
+    def predict(self, xdata):
         '''
-        in: Xdata, a list of plays (for which the next lay should be predicted)
+        in: xdata, a list of plays (for which the next lay should be predicted)
         out: y, a list of iid predictions
         sample from the IDI
         '''
-        return np.array([np.random.choice(self.keys_dict[play],
-                                          p=self.probs_dict[play])
-                         for play in Xdata])
+        ypred = []#np.zeros(len(xdata))
+        for play in xdata:
+            if play in self.keys_dict.keys():
+                ypred.append(np.random.choice(self.keys_dict[play],
+                                              p=self.probs_dict[play]))
+            else:
+                ypred.append('UNKNOWN PLAY')
+        return ypred
+
+def test_it(num_games, corpus_filename, estimator):
+    '''
+    in: num_games, number of games from the corpus to use in the whole
+                   dataset
+        corpus_filename, path (excluding suffix) to pkl file of the corpus
+        estimator, the estimator class to use
+    '''
+    print(f'Corpus: {corpus_filename}\nEstimator: {estimator}')
+    corpus = dp.unpickle_it(CORPUS_FILENAME)[:num_games]
+    train_data, test_data = dp.train_test_split(corpus)
+    print(f'\tTraining on {len(train_data)} games')
+    print(f'\tTesting on {len(test_data)} games')
+    train_data = dp.flatten_games(train_data)
+    test_data = dp.flatten_games(test_data)
+    x_train = train_data[:-1]
+    y_train = train_data[1:]
+    x_test = test_data[:-1]
+    y_test = test_data[1:]
+    estimator.fit(x_train, y_train)
+    print('\tFit complete')
+    y_pred = estimator.predict(x_test)
+    print('\tPredictions complete')
+    val_acc = sum(np.array(y_pred) == np.array(y_test))/len(y_test)
+    print(f'\tValidation accuracy: {val_acc}\n\n')
+
 
 if __name__ == '__main__':
-    ESTIMATOR = UncorrelatedEstimator()
-    STOP = 400000
+    ESTIMATORS = [UncorrelatedEstimator(), MarkovEstimator()]
+    STOP = 3000
     CORPUS_FILENAME = '../assets/corpi/full_coords_bin_10'
-    CORPUS = dp.flatten_games(dp.unpickle_it(CORPUS_FILENAME))
-    CORPUS = CORPUS[:STOP]
-    print(f'Corpus: {CORPUS_FILENAME}\nEstimator: {ESTIMATOR}\nsize: {STOP}')
-    X = CORPUS[:-1]
-    Y = CORPUS[1:]
-    ESTIMATOR.fit(X, Y)
-    print('Fit complete')
-    Y_PRED = ESTIMATOR.predict(X)
-    print('Predictions complete')
-    VAL_ACC = sum(np.array(Y_PRED) == np.array(Y))/len(Y)
-    print(f'Validation accuracy: {VAL_ACC}')
+    for ESTIMATOR in ESTIMATORS:
+        test_it(STOP, CORPUS_FILENAME, ESTIMATOR)
