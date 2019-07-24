@@ -1,18 +1,20 @@
-from tensorflow import keras
+'''
+@tiwariku
+'''
+import logging
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
 from tensorflow.keras import backend as K
 
-import model_fns as mf
-import data_processing as dp
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 
 from hpbandster.core.worker import Worker
 
-import logging
+import model_fns as mf
+import data_processing as dp
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -20,13 +22,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 class KerasWorker(Worker):
-    def __init__(self, N_train=8192, N_valid=1024, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.batch_size = 100
-        self.corpus_filename = '../../assets/corpi/full_coords_bin_10'
+        self.corpus_filename = '../../assets/corpi/coarse_corpus'
         self.num_steps = 500
-        self.gen_step_len = self.batch_size*self.num_steps
 
         (train,
          valid,
@@ -36,8 +37,9 @@ class KerasWorker(Worker):
          self.id_to_play) = dp.corpus_to_keras(self.corpus_filename,
                                                pad_play=str({'Type':'Nothing'}))
 
-        self.train_len = sum([len(game) for game in train])
-        self.test_len = sum([len(game) for game in test])
+        gen_step_len = self.batch_size*self.num_steps
+        self.train_steps = sum([len(game) for game in train])//gen_step_len
+        self.test_steps = sum([len(game) for game in test])//gen_step_len
 
         self.train_gen = mf.KerasBatchGenerator(train,
                                                 self.num_steps,
@@ -55,9 +57,9 @@ class KerasWorker(Worker):
         """
         """
         hidden_size = config['hidden_size']
-        dropout = config['dropout']
+        dropout = config['dropout_rate']
         learning_rate = config['learning_rate']
-
+        print(f'configuration: {config}')
         model = Sequential()
         model.add(layers.Embedding(self.vocabulary,
                                    hidden_size,
@@ -72,20 +74,13 @@ class KerasWorker(Worker):
                       metrics=['categorical_accuracy'])
 
         history = model.fit_generator(self.train_gen.generate(),
-                                      self.train_len//(self.gen_step_len),
+                                      self.train_steps,
                                       epochs=int(budget),
-                                      verbose=0,
+                                      verbose=1,
                                       validation_data=self.test_gen.generate(),
-                                      validation_steps=self.gen_step_len)
+                                      validation_steps=self.test_steps)
 
-        loss = model.evaluate_generator(self.train_gen.generate(),
-                                        self.train_len//(self.gen_step_len))
-
-        #import IPython; IPython.embed()
-        return ({'loss': loss, # remember: HpBandSter always minimizes!
-                 'info': {'': None,
-                          'training history': history,
-                         }})
+        return ({'loss': history.history['val_loss'], 'info': history.history})
 
 
     @staticmethod
@@ -93,19 +88,20 @@ class KerasWorker(Worker):
         """
         It builds the configuration space with the needed hyperparameters.
         It is easily possible to implement different types of hyperparameters.
-        Beside float-hyperparameters on a log scale, it is also able to handle categorical input parameter.
+        Beside float-hyperparameters on a log scale, it is also able to handle
+        categorical input parameter.
         :return: ConfigurationsSpace-Object
         """
-        cs = CS.ConfigurationSpace()
+        config_space = CS.ConfigurationSpace()
 
-        lr = CSH.UniformFloatHyperparameter('learning_rate',
-                                            lower=1e-6,
-                                            upper=1e-1,
-                                            default_value='1e-2',
-                                            log=True)
+        learning_rate = CSH.UniformFloatHyperparameter('learning_rate',
+                                                       lower=1e-6,
+                                                       upper=1e-1,
+                                                       default_value='1e-2',
+                                                       log=True)
 
         dropout_rate = CSH.UniformFloatHyperparameter('dropout_rate',
-                                                      lower=0.0,
+                                                      lower=0.2,
                                                       upper=0.9,
                                                       default_value=0.5,
                                                       log=False)
@@ -116,19 +112,18 @@ class KerasWorker(Worker):
                                                        default_value=32,
                                                        log=True)
 
-        cs.add_hyperparameters([lr, dropout_rate, hidden_size])
-        return cs
+        config_space.add_hyperparameters([learning_rate,
+                                          dropout_rate,
+                                          hidden_size])
+        return config_space
 
 
 
 
 if __name__ == "__main__":
-    worker = KerasWorker(run_id='0')
-    cs = worker.get_configspace()
-    id2config = res.get_id2config_mapping()
-    incumbent = res.get_incumbent_id()
-    config = cs.sample_configuration().get_dictionary()
-    print(config)
-    res = worker.compute(config=config, budget=1, working_directory='.')
-    print(res)
-    print(id2config[incumbent]['config'])
+    WORKER = KerasWorker(run_id='0')
+    CONFIG_SPACE = WORKER.get_configspace()
+    CONFIG = CONFIG_SPACE.sample_configuration().get_dictionary()
+    print(CONFIG)
+    RESULT = WORKER.compute(config=CONFIG, budget=1, working_directory='.')
+    print(RESULT)
