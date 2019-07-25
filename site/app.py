@@ -68,11 +68,12 @@ probs = html.Div(id='probs Div',
 
 
 layout_kids = [title, buttons, hockey_rink, event_list, game_data, probs]
-layout = html.Div(layout_kidsapp.layout = layout
+layout = html.Div(layout_kids)
+app.layout = layout
 # callbacks
-@app.callback(
-    Output(component_id='game_json', component_property='children'),
-    [Input('get game', 'n_clicks')],)
+@app.callback(Output(component_id='game_json', 
+                     component_property='children'),
+              [Input('get game', 'n_clicks')],)
 def update_game_json(n_clicks):
     return ''#io.get_game_response().content#html.Div('BYE!{}'.format(n_clicks))
 
