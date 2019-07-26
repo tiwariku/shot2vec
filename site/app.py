@@ -3,11 +3,11 @@ shot2vec webapp
 @tiwariku
 '''
 #import base64
-from ast import literal_eval
+#from ast import literal_eval
 #import uuid
 import dash
-from dash.dependencies import Input, Output, State
-#import dash_core_components as dcc
+from dash.dependencies import Input, Output #State
+import dash_core_components as dcc
 import dash_html_components as html
 #import plotly.graph_objs as go
 #from numpy.random import randint
@@ -37,8 +37,8 @@ TITLE = html.H1(children='shot2vec')
 
 HOCKEY_RINK = html.Div([html.H2(id='rink_div', children='Recent Plays'),
                         html.P(id='rink placeholder', children='Hi World'),
-                        #dcc.Graph(id='rink_plot', figure=None
-                        #fn.make_rink_fig(1, temp_game_json),
+                        dcc.Graph(id='rink_plot',
+                                  figure=fn.make_rink_fig(1, GAME_JSON),)
                        ])
 
 GET_GAME_BUTTON = html.Button(id='get game',
@@ -62,43 +62,15 @@ APP.layout = LAYOUT
 # callbacks
 @APP.callback(Output(component_id='rink_plot', component_property='figure'),
               [Input('step forward', 'n_clicks')],
-              state=[State(component_id='game_json',
-                           component_property='children')])
-def step_forward(n_steps, game_json_str):
+              #state=[State(component_id='game_json',
+              #             component_property='children')]
+             )
+def step_forward(n_steps):
     '''
     Thsi callback updates the 'rink'fig' with the game json
     '''
-
+    temp_game_json = GAME_JSON
     return fn.make_rink_fig(n_steps, temp_game_json)#io.get_game_response().json())
-
-@APP.callback(Output(component_id='recent plays',
-                     component_property='children'),
-              [Input('step forward', 'n_clicks')],
-              state=[State(component_id='game_json',
-                           component_property='children')])
-def update_recent_plays(n_steps, game_json_str):
-    '''
-    This callback updates the recent plays list with the most recent plays
-    '''
-    #window = 5
-    temp_game_json = literal_eval(game_json_str)
-    plays = fn.get_recent_plays_string(n_steps, temp_game_json)
-    return str(plays)#', '.join()
-
-
-@APP.callback(Output(component_id='probs',
-                     component_property='children'),
-              [Input('step forward', 'n_clicks')],
-              state=[State(component_id='game_json',
-                           component_property='children')])
-def update_probs(n_steps, game_json_str):
-    '''
-    This function calculates the new probabilities
-    '''
-    temp_game_json = literal_eval(game_json_str)
-    return str(fn.get_probs(n_steps, temp_game_json, MODEL_PREDICTING))
-
-
 
 
 if __name__ == '__main__':
