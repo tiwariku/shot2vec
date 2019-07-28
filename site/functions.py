@@ -8,7 +8,7 @@ import base64
 import plotly.graph_objs as go
 import data_processing as dp
 
-with open("assets/rink.jpg", "rb") as image_file:
+with open("assets/rink2.png", "rb") as image_file:
     ENCODED_STRING = base64.b64encode(image_file.read()).decode()
 #add the prefix that plotly will want when using the string as source
 RINK_IMAGE_ENCODED = "data:image/png;base64," + ENCODED_STRING
@@ -53,11 +53,19 @@ def make_rink_fig(n_steps, game_json):
 
     #print(n_steps)
     #print(game_json)
+    window = 10
+    opac = .2
+    data = {}
+    if game_json:
+        plays = [literal_eval(play) for play in
+                 dp.game_to_plays(game_json)][:n_steps]
+        data = [_play_dict_to_plottable(play, opac) for i, play in enumerate(plays)]
+        #print(data)
+        if len(data) > window:
+            data = data[-window:]
 
-    plays = [literal_eval(play) for play in dp.game_to_plays(game_json)][:n_steps]
-    data = [_play_dict_to_plottable(play, 1) for i, play in enumerate(plays)]
-    #print(data)
-    data[-1]['marker']['size'] = 30
+        data[-1]['marker']['size'] = 30
+        data[-1]['opacity'] = 1
 
     layout_dict = dict(title='',
                        showlegend=False,

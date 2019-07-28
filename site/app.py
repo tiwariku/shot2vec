@@ -6,7 +6,7 @@ shot2vec webapp
 #from ast import literal_eval
 #import uuid
 import dash
-from dash.dependencies import Input, Output #State
+from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
 #import plotly.graph_objs as go
@@ -53,8 +53,12 @@ BUTTONS = html.Div(children=[GET_GAME_BUTTON, STEP_FORWARD_BUTTOM],
                    style={'columnCount':2}
                   )
 
+STORE = dcc.Store(id='my-store')
 
-LAYOUT_KIDS = [TITLE, BUTTONS, HOCKEY_RINK]
+DEBUG_OUTPUT = html.Div(id='debug',
+                        children='Hi, World')
+
+LAYOUT_KIDS = [TITLE, BUTTONS, HOCKEY_RINK, DEBUG_OUTPUT, STORE]
 LAYOUT = html.Div(LAYOUT_KIDS)
 
 APP = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
@@ -62,15 +66,38 @@ APP.layout = LAYOUT
 # callbacks
 @APP.callback(Output(component_id='rink_plot', component_property='figure'),
               [Input('step forward', 'n_clicks')],
-              #state=[State(component_id='game_json',
-              #             component_property='children')]
+              state=[State(component_id='my-store',
+                           component_property='data')]
              )
-def step_forward(n_steps):
+def update_rink_fig(n_steps, game_json):
     '''
-    Thsi callback updates the 'rink'fig' with the game json
+    This callback updates the 'rink fig' with the game json, which is stored in
+    my-store under property 'data'
     '''
-    temp_game_json = GAME_JSON
-    return fn.make_rink_fig(n_steps, temp_game_json)#io.get_game_response().json())
+    return fn.make_rink_fig(n_steps, game_json)#io.get_game_response().json())
+
+@APP.callback(Output(component_id='my-store', component_property='data'),
+              [Input(component_id='get game', component_property='n_clicks')])
+def store_game_json(n_clicks):
+    """
+    callback function to store the selected game's response from the NHL API in
+    my-store as property 'data' in JSON format
+    """
+    game_json = None
+    if n_clicks > 0:
+        game_json = io.get_game_response().json()
+    return game_json
+
+@APP.callback(Output(component_id='debug', component_property='children'),
+              [Input(component_id='my-store', component_property='data')])
+def debug_display(data):
+    """
+    Callback for debuging app.. accepts some input and displays it in a Div at
+    the bottom of the page
+    """
+    if data:
+        return str(data['copyright'])
+    return 'No data yet'
 
 
 if __name__ == '__main__':
