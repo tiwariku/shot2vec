@@ -16,8 +16,8 @@ import functions as fn
 import model_fns as mf
 import in_out as io
 import data_processing as dp
+import corpse_maker as cm
 
-GAME_JSON = io.get_game_response().json()
 
 EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 CORPUS_FILENAME = '../assets/corpi/full_coords_bin_10'
@@ -30,16 +30,16 @@ HIDDEN_SIZE = 30
 MODEL_PREDICTING = mf.make_prediction_model_file(MODEL_WEIGHTS,
                                                  VOCABULARY,
                                                  hidden_size=HIDDEN_SIZE)
-
-
+STRIPPER = cm.strip_name_and_coords
 
 TITLE = html.H1(children='shot2vec')
 
 HOCKEY_RINK = html.Div([html.H2(id='rink_div', children='Recent Plays'),
-                        html.P(id='rink placeholder', children='Hi World'),
-                        dcc.Graph(id='rink_plot',
-                                  figure=fn.make_rink_fig(1, GAME_JSON),)
-                       ])
+                        html.Div(dcc.Graph(id='rink_plot',
+                                           figure=fn.make_rink_fig(None),),
+                                 style={'width':700})
+                       ],
+                      )
 
 GET_GAME_BUTTON = html.Button(id='get game',
                               children='Get game data',
@@ -47,37 +47,39 @@ GET_GAME_BUTTON = html.Button(id='get game',
 
 STEP_FORWARD_BUTTOM = html.Button(id='step forward',
                                   children='Step forward',
-                                  n_clicks=1)
+                                  n_clicks=3)
 
 BUTTONS = html.Div(children=[GET_GAME_BUTTON, STEP_FORWARD_BUTTOM],
                    style={'columnCount':2}
                   )
 
 STORE = dcc.Store(id='my-store')
+GAME_PLAYS = dcc.Store(id='game-plays', data=None)
 
 DEBUG_OUTPUT = html.Div(id='debug',
                         children='Hi, World')
 
-LAYOUT_KIDS = [TITLE, BUTTONS, HOCKEY_RINK, DEBUG_OUTPUT, STORE]
+LAYOUT_KIDS = [TITLE, BUTTONS, HOCKEY_RINK, DEBUG_OUTPUT, STORE, GAME_PLAYS]
 LAYOUT = html.Div(LAYOUT_KIDS)
 
 APP = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 APP.layout = LAYOUT
+
 # callbacks
 @APP.callback(Output(component_id='rink_plot', component_property='figure'),
-              [Input('step forward', 'n_clicks')],
-              state=[State(component_id='my-store',
-                           component_property='data')]
+              [Input(component_id='game-plays',
+                     component_property='data')]
              )
-def update_rink_fig(n_steps, game_json):
-    '''
+def update_rink_fig(plays):
+    """
     This callback updates the 'rink fig' with the game json, which is stored in
     my-store under property 'data'
-    '''
-    return fn.make_rink_fig(n_steps, game_json)#io.get_game_response().json())
+    """
+    return fn.make_rink_fig(plays)
 
 @APP.callback(Output(component_id='my-store', component_property='data'),
-              [Input(component_id='get game', component_property='n_clicks')])
+              [Input(component_id='get game', component_property='n_clicks')]
+             )
 def store_game_json(n_clicks):
     """
     callback function to store the selected game's response from the NHL API in
@@ -88,17 +90,41 @@ def store_game_json(n_clicks):
         game_json = io.get_game_response().json()
     return game_json
 
+@APP.callback(Output(component_id='game-plays', component_property='data'),
+              [Input(component_id='step forward',
+                     component_property='n_clicks')],
+              state=[State(component_id='my-store',
+                           component_property='data')]
+             )
+def get_current_plays(n_clicks, game_json):
+    """
+    makes a truncated list of game plays (so far) into store game-plays
+    """
+    if game_json:
+        return dp.game_to_plays(game_json, cast_fn=lambda x: x)[:n_clicks]
+    return None
+
+@APP.callback(Output(component_id='step forward',
+                     component_property='n_clicks'),
+              [Input(component_id='get game', component_property='n_clicks')])
+def reset_stepper(n_clicks):
+    """
+    resets to the step forward start of the game when 'get game' is clicked
+    """
+    return 0*n_clicks+3
+
 @APP.callback(Output(component_id='debug', component_property='children'),
-              [Input(component_id='my-store', component_property='data')])
+              [Input(component_id='game-plays', component_property='data')]
+             )
 def debug_display(data):
     """
     Callback for debuging app.. accepts some input and displays it in a Div at
     the bottom of the page
     """
     if data:
-        return str(data['copyright'])
-    return 'No data yet'
-
+        seed_list = [PLAY_TO_ID[str(STRIPPER(play))] for play in data]
+        return mf.next_probs(seed_list, MODEL_PREDICTING)
+    return str(PLAY_TO_ID)
 
 if __name__ == '__main__':
     APP.run_server(debug=True)

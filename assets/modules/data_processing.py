@@ -24,7 +24,7 @@ def unpickle_it(name):
     with open(f'{name}.pkl', 'rb') as pkfile:
         return pickle.load(pkfile)
 
-def game_to_plays(game, strip_fn=lambda x: x):
+def game_to_plays(game, strip_fn=lambda x: x, cast_fn=str):
     '''
     in: game, a game_json as returned by the NHL api
         strip_fn (optional), a function to strip the event dictionaries
@@ -33,7 +33,7 @@ def game_to_plays(game, strip_fn=lambda x: x):
                     strings can be converted back to dictionaries using
                     literal_eval from the ast package
     '''
-    game_plays = [str(strip_fn(play)) for play in
+    game_plays = [cast_fn(strip_fn(play)) for play in
                   game['liveData']['plays']['allPlays']]
     return game_plays
 
@@ -45,6 +45,22 @@ def strip_name_only(play):
     stripped_play = {}
     stripped_play['Type'] = play['result']['event']
     return stripped_play
+
+def strip_coord_bin(play, bin_size=10):
+    """
+    in: event dictionary in nhl API format
+    out: event dictionary with event type and event coordinates
+    """
+    stripped_play = {}
+    stripped_play['result'] = {}
+    stripped_play['result']['event'] = play['result']['event']
+    stripped_play['coordinates'] = play['coordinates']
+    if stripped_play['coordinates']['x']:
+        stripped_play['coordinates']['x'] //= bin_size
+        stripped_play['coordinates']['x'] *= bin_size
+    if stripped_play['coordinates']['y']:
+        stripped_play['coordinates']['y'] //= bin_size
+        stripped_play['coordinates']['y'] *= bin_size
 
 def get_corpus(start_year=2010, stop_year=2019, strip_fn=strip_name_only):
     '''

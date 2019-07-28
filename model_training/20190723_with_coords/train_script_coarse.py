@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print(f'number of words: {VOCABULARY}')
     TRAIN_LEN = sum([len(game) for game in TRAIN_DATA])
     TEST_LEN = sum([len(game) for game in TEST_DATA])
-        
+
     TRAIN_GENERATOR = mf.KerasBatchGenerator(TRAIN_DATA,
                                              NUM_STEPS,
                                              BATCH_SIZE,

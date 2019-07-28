@@ -18,13 +18,13 @@ class KerasBatchGenerator(object):
     '''
     def __init__(self, data, num_steps, batch_size, vocabulary, skip_step=5):
         self.data = [play for game in data
-                          for play in game]
+                     for play in game]
         self.num_steps = num_steps
         self.batch_size = batch_size
         self.vocabulary = vocabulary
         self.current_idx = 0
         self.skip_step = skip_step
-        
+
     def generate(self):
         while True:#never terminate
             #input is just the number of steps in each in, and the batch size
@@ -135,11 +135,12 @@ def next_probs(seed_list, model_predictining):
     '''
     in:
         seed_list: the game so far in id format
-    out: 
+    out:
         vector of probabilities, index corresponds to id
     '''
     model_predictining.reset_states()
     for seed in seed_list[:-1]:
+        print(seed)
         model_predictining.predict([seed,], verbose=0)
     probs_vector = model_predictining.predict([seed_list[-1],],
                                               verbose=0)[0][0]

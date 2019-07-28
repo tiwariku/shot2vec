@@ -3,10 +3,10 @@ functions used by shot2vec site
 @tiwariku
 2019-07-26
 '''
-from ast import literal_eval
+#from ast import literal_eval
 import base64
 import plotly.graph_objs as go
-import data_processing as dp
+#import data_processing as dp
 
 with open("assets/rink2.png", "rb") as image_file:
     ENCODED_STRING = base64.b64encode(image_file.read()).decode()
@@ -44,7 +44,7 @@ def _play_dict_to_plottable(event_json, opacity=1):
     ev_dict['y'] = [y_coord,]
     return ev_dict
 
-def make_rink_fig(n_steps, game_json):
+def make_rink_fig(plays):
     '''
     in:
         n_steps, the integer numbero of steps to display
@@ -56,9 +56,7 @@ def make_rink_fig(n_steps, game_json):
     window = 10
     opac = .2
     data = {}
-    if game_json:
-        plays = [literal_eval(play) for play in
-                 dp.game_to_plays(game_json)][:n_steps]
+    if plays:
         data = [_play_dict_to_plottable(play, opac) for i, play in enumerate(plays)]
         #print(data)
         if len(data) > window:
