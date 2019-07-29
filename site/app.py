@@ -17,6 +17,7 @@ import model_fns as mf
 import in_out as io
 import data_processing as dp
 import corpse_maker as cm
+from baseline_models import MarkovEstimator
 
 
 EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -30,7 +31,10 @@ HIDDEN_SIZE = 30
 MODEL_PREDICTING = mf.make_prediction_model_file(MODEL_WEIGHTS,
                                                  VOCABULARY,
                                                  hidden_size=HIDDEN_SIZE)
-STRIPPER = cm.strip_name_and_coords
+STRIPPER = cm.strip_name_zone
+BASE_MODEL_DIR = '../baseline_models/markov_zone'
+BASE_MODEL = MarkovEstimator()
+BASE_MODEL = dp.unpickle_it(BASE_MODEL_DIR)
 
 TITLE = html.H1(children='shot2vec')
 
@@ -75,7 +79,11 @@ def update_rink_fig(plays):
     This callback updates the 'rink fig' with the game json, which is stored in
     my-store under property 'data'
     """
-    return fn.make_rink_fig(plays)
+    goal_probs = None
+    if plays:
+        play_str = str(STRIPPER(plays[-1]))
+        goal_probs = BASE_MODEL.goal_probs(play_str)
+    return fn.make_rink_fig(plays, goal_probs)
 
 @APP.callback(Output(component_id='my-store', component_property='data'),
               [Input(component_id='get game', component_property='n_clicks')]
