@@ -32,7 +32,7 @@ def strip_name_and_coords(play, bin_size=10):
 if __name__ == '__main__':
     START_YEAR = 2010
     STOP_YEAR = 2018
-    BIN_SIZE = 10
+    BIN_SIZE = 20
     CORPUS_FILENAME = f'full_coords_bin_{BIN_SIZE}'
     STRIP_FN = lambda x: strip_name_and_coords(x, bin_size=BIN_SIZE)
     CORPUS = dp.get_corpus(start_year=START_YEAR,
