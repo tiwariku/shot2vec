@@ -37,7 +37,7 @@ TITLE = html.H1(children='shot2vec')
 HOCKEY_RINK = html.Div([html.H2(id='rink_div', children='Recent Plays'),
                         html.Div(dcc.Graph(id='rink_plot',
                                            figure=fn.make_rink_fig(None),),
-                                 style={'width':700})
+                                 style={'width':800})
                        ],
                       )
 
@@ -122,9 +122,10 @@ def debug_display(data):
     the bottom of the page
     """
     if data:
-        seed_list = [PLAY_TO_ID[str(STRIPPER(play))] for play in data]
-        return mf.next_probs(seed_list, MODEL_PREDICTING)
-    return str(PLAY_TO_ID)
+        pass
+    #    seed_list = [PLAY_TO_ID[str(STRIPPER(play))] for play in data]
+    #    return mf.next_probs(seed_list, MODEL_PREDICTING)
+    return 'Debug output'
 
 if __name__ == '__main__':
     APP.run_server(debug=True)

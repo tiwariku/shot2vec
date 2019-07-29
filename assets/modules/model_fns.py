@@ -28,20 +28,20 @@ class KerasBatchGenerator(object):
     def generate(self):
         while True:#never terminate
             #input is just the number of steps in each in, and the batch size
-            x = np.zeros((self.batch_size, 
+            x = np.zeros((self.batch_size,
                           self.num_steps))
             #output will be one-hots of dimension vocabulary
-            y = np.zeros((self.batch_size, 
-                          self.num_steps, 
+            y = np.zeros((self.batch_size,
+                          self.num_steps,
                           self.vocabulary))
             for i in range(self.batch_size):
                 #if I would run over the edge, reset idx
                 if self.current_idx + self.num_steps >= len(self.data):
                     self.current_idx = 0
-                x[i,:] = self.data[self.current_idx:self.current_idx + self.num_steps]
+                x[i, :] = self.data[self.current_idx:self.current_idx + self.num_steps]
                 temp_y = self.data[self.current_idx + 1:self.current_idx + self.num_steps+1]
                 #make the one-hots for the y training data
-                y[i,:,:] = to_categorical(temp_y, 
+                y[i, :, :] = to_categorical(temp_y,
                                           num_classes=self.vocabulary)
                 self.current_idx += self.skip_step
             yield x, y
@@ -139,8 +139,8 @@ def next_probs(seed_list, model_predictining):
         vector of probabilities, index corresponds to id
     '''
     model_predictining.reset_states()
-    #   for seed in seed_list[:-1]:
-    #       print(seed)
-    #       model_predictining.predict([seed,], verbose=0)
-    probs_vector = model_predictining.predict(seed_list, verbose=0)
-    return probs_vector[-1][0]
+    for seed in seed_list[:-1]:
+        print(seed)
+        model_predictining.predict([seed,], verbose=0)
+    probs_vector = model_predictining.predict([seed_list[-1]], verbose=0)
+    return probs_vector[0][0]

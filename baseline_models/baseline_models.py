@@ -126,6 +126,6 @@ def test_it(num_games, corpus_filename, estimator):
 if __name__ == '__main__':
     ESTIMATORS = [UncorrelatedEstimator(), MarkovEstimator()]
     STOP = 3000
-    CORPUS_FILENAME = '../assets/corpi/full_coords_bin_10'
+    CORPUS_FILENAME = '../assets/corpi/corpus_zone'
     for ESTIMATOR in ESTIMATORS:
         test_it(STOP, CORPUS_FILENAME, ESTIMATOR)
