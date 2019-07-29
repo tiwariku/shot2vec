@@ -139,9 +139,8 @@ def next_probs(seed_list, model_predictining):
         vector of probabilities, index corresponds to id
     '''
     model_predictining.reset_states()
-    for seed in seed_list[:-1]:
-        print(seed)
-        model_predictining.predict([seed,], verbose=0)
-    probs_vector = model_predictining.predict([seed_list[-1],],
-                                              verbose=0)[0][0]
-    return probs_vector
+    #   for seed in seed_list[:-1]:
+    #       print(seed)
+    #       model_predictining.predict([seed,], verbose=0)
+    probs_vector = model_predictining.predict(seed_list, verbose=0)
+    return probs_vector[-1][0]
