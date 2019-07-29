@@ -44,22 +44,7 @@ def _play_dict_to_plottable(event_json, opacity=1):
     ev_dict['y'] = [y_coord,]
     return ev_dict
 
-def _play_dict_to_shading(play_json=None, prob=.1, opacity=.3):
-    """
-    in:
-        play_json. should have key 'zone'
-    out:
-        trace dictionary for the
-    """
-    if not play_json:
-        return {'x': [[0, 75], [75, 125], [125, 200]],
-                'y': [0, 85],
-                'z': [[prob, 0.2, 0.02]],
-                'type': 'heatmap',
-                'opacity':opacity}
-    return None
-
-def _zone_prob_traces(plist, cscale='Reds'):
+def _zone_prob_traces(plist, cscale=None):
     """
     in:
         plist, list of length 3, where p[0] is the probability for the left zone
@@ -69,6 +54,8 @@ def _zone_prob_traces(plist, cscale='Reds'):
     out:
         traces: list of traces for plotting
     """
+    if not cscale:
+        cscale = [[0, 'rgb(255, 255, 255)'], [1, 'rgb(255,0,0)']]
     assert len(plist) == 3
     ybound = [-42.5, 42.5, 50, 60]
     xbounds = [[-100, -25], [-25, 25], [25, 100]]
@@ -123,7 +110,7 @@ def _make_rink_fig_layout():
                       )
     return go.Layout(**layout_dict)
 
-def make_rink_fig(plays):
+def make_rink_fig(plays, prob_list = [1,0,1]):
     '''
     in:
         n_steps, the integer numbero of steps to display
@@ -133,7 +120,6 @@ def make_rink_fig(plays):
     fig = go.Figure(data=None,
                     layout=layout,)
 
-    prob_list = [.1, 0, .1]
     prob_traces = _zone_prob_traces(prob_list)
     for trace in prob_traces:
         fig.add_trace(trace)

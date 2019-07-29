@@ -10,6 +10,7 @@ by each type of play.
 
 from collections import defaultdict
 from collections import Counter
+from ast import literal_eval
 import numpy as np
 from sklearn import base
 import data_processing as dp
@@ -97,6 +98,30 @@ class MarkovEstimator(base.BaseEstimator, base.RegressorMixin):
                 ypred.append('UNKNOWN PLAY')
         return ypred
 
+    def goal_probs(self, play):
+        """
+        in: play, in serialized format
+        out: probs, a 3 element list for the probability of a goal to be scored
+        next in each of the three zones
+        """
+        if play in self.keys_dict:
+            probs_zone = [0, 0, 0]
+            zone_dict = {'L':0, 'N': 1, 'R':2}
+            keys = [literal_eval(key) for key in self.keys_dict[play]]
+            probs = self.probs_dict[play]
+            #print(probs_zone)
+            #print(keys)
+            #print(probs)
+            for i, key in enumerate(keys):
+                #print(key, probs[i])
+                if key['Zone'] == 'Unk':
+                    continue
+                if key['Type'] == 'Goal':
+                    #print('\tis goal')
+                    probs_zone[zone_dict[key['Zone']]] = probs[i]
+            return probs_zone
+        return [1, 1, 1]
+
 def test_it(num_games, corpus_filename, estimator):
     '''
     in: num_games, number of games from the corpus to use in the whole
@@ -121,6 +146,7 @@ def test_it(num_games, corpus_filename, estimator):
     print('\tPredictions complete')
     val_acc = sum(np.array(y_pred) == np.array(y_test))/len(y_test)
     print(f'\tValidation accuracy: {val_acc}\n\n')
+    dp.pickle_it(corpus_filename.split('/')[-1], estimator)
 
 
 if __name__ == '__main__':
