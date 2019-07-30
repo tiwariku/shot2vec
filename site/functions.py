@@ -5,10 +5,11 @@ functions used by shot2vec site
 '''
 #from ast import literal_eval
 import base64
+from collections import defaultdict
 import plotly.graph_objs as go
 #import data_processing as dp
 
-with open("assets/rink_mine_clear.png", "rb") as image_file:
+with open("assets/rink_mine.png", "rb") as image_file:
     ENCODED_STRING = base64.b64encode(image_file.read()).decode()
 #add the prefix that plotly will want when using the string as source
 RINK_IMAGE_ENCODED = "data:image/png;base64," + ENCODED_STRING
@@ -34,11 +35,27 @@ def _play_dict_to_plottable(event_json, opacity=1):
     out:
         ev_dict with appropriate keys for input to plotly figure
     '''
+    marker_dict = defaultdict(lambda: 'hourglass')
+    marker_dict['Faceoff'] = 'circle'
+    marker_dict['Shot'] = 'star-diamond'
+    marker_dict['Missed Shot'] = 'star-diamond-open'
+    marker_dict['Blocked Shot'] = 'star-diamond-open-dot'
+    marker_dict['Goal'] = 'star'
+    marker_dict['Hit'] = 'x'
+    marker_dict['Penalty'] = 'cross'
+    marker_dict['Takeaway'] = 'triangle-up'
+    marker_dict['Giveaway'] = 'triangle-down'
+    p_type = event_json['result']['event']
     ev_dict = {'name':'',
                'mode':'markers',
                'opacity':opacity,
-               'marker':{'size':12, 'color':'black'}}
-    ev_dict['text'] = [event_json['result']['event'],]
+               'marker':{'size':10,
+                         'color':'black',
+                         'symbol':marker_dict[p_type],
+                         'line':{'width':2}
+                        }
+              }
+    ev_dict['text'] = [p_type,]
     x_coord, y_coord = _getcoords(event_json)
     ev_dict['x'] = [x_coord,]
     ev_dict['y'] = [y_coord,]
@@ -85,7 +102,7 @@ def _plays_to_traces(plays, window=10, bg_opacity=.2):
                 for i, play in enumerate(plays)]
         if len(data) > window:
             data = data[-window:]
-        data[-1]['marker']['size'] = 30
+        data[-1]['marker']['size'] = 20
         data[-1]['opacity'] = 1
     return data
 
