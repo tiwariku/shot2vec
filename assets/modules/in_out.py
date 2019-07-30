@@ -9,7 +9,7 @@ from requests_futures.sessions import FuturesSession
 from ediblepickle import checkpoint
 
 def get_game_response(game_number='0400', year='2015', game_type='02',
-                      future=None):
+                      future=None, game_id=None):
     '''
     in: game_ID, year, game_type, optional future, a FutureSession get respnose
         for the game. future overrides the specified game details
@@ -20,16 +20,19 @@ def get_game_response(game_number='0400', year='2015', game_type='02',
         future = get_game_future(session,
                                  game_number=game_number,
                                  year=year,
-                                 game_type=game_type)
+                                 game_type=game_type,
+                                 game_id=game_id)
     return future.result()
 
-def get_game_future(session, game_number='0400', year='2015', game_type='02'):
+def get_game_future(session, game_number='0400', year='2015', game_type='02',
+                    game_id=None):
     '''
     in: session, a FuturesSession object for making the asynchronous requests,
         game_number, year, game_type in string format
     out: future associated with request
     '''
-    game_id = f'{year}{game_type}{game_number}'
+    if not game_id:
+        game_id = f'{year}{game_type}{game_number}'
     url = f'https://statsapi.web.nhl.com/api/v1/game/{game_id}/feed/live'
     return session.get(url)
 
@@ -65,6 +68,18 @@ def get_year_games(year, game_type='02', max_workers=10, verbose=False):
         if verbose and i%100 == 0:
             print(f'\t game {i+1}')
     return games
+
+def get_schedule_json(date):
+    """
+    in:
+        date in date-time format
+    out:
+        json of the response from nhl api
+    """
+    session = FuturesSession(max_workers=1)
+    schedule_url = 'https://statsapi.web.nhl.com/api/v1/schedule'
+    return session.get(schedule_url,
+                       params={'date' : str(date)}).result().json()
 
 def cache_seasons(start_year=2010, end_year=2019):
     '''

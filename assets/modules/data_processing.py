@@ -24,6 +24,23 @@ def unpickle_it(name):
     with open(f'{name}.pkl', 'rb') as pkfile:
         return pickle.load(pkfile)
 
+def schedule_to_game_list(schedule_json):
+    """
+    in:
+        schedule_json: in nhl api format
+    out:
+    """
+    def _get_dropdown_dict(game):
+        home_team = game['teams']['home']['team']['name']
+        away_team = game['teams']['away']['team']['name']
+        game_id = game['gamePk']
+        return {'label':f'{away_team} @ {home_team}', 'value':game_id}
+    dates = schedule_json['dates']
+    if not dates:
+        return dates
+    games = dates[0]['games']
+    return [_get_dropdown_dict(game) for game in games]
+
 def game_to_plays(game, strip_fn=lambda x: x, cast_fn=str):
     '''
     in: game, a game_json as returned by the NHL api

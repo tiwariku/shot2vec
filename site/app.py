@@ -5,6 +5,7 @@ shot2vec webapp
 #import base64
 #from ast import literal_eval
 #import uuid
+#from datetime import datetime as dt
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -45,16 +46,20 @@ HOCKEY_RINK = html.Div([html.H2(id='rink_div', children='Recent Plays'),
                        ],
                       )
 
-GET_GAME_BUTTON = html.Button(id='get game',
-                              children='Get game data',
-                              n_clicks=0)
+GET_DATE = dcc.DatePickerSingle(id='date-picker',
+                                date=None
+                               )
+GAME_DROPDOWN = dcc.Dropdown(id='game-dropdown',
+                             options=[],
+                            )
 
 STEP_FORWARD_BUTTOM = html.Button(id='step forward',
                                   children='Step forward',
                                   n_clicks=3)
 
-BUTTONS = html.Div(children=[GET_GAME_BUTTON, STEP_FORWARD_BUTTOM],
-                   style={'columnCount':2}
+BUTTONS = html.Div(children=[GET_DATE,
+                             GAME_DROPDOWN,
+                             STEP_FORWARD_BUTTOM],
                   )
 
 STORE = dcc.Store(id='my-store')
@@ -86,16 +91,15 @@ def update_rink_fig(plays):
     return fn.make_rink_fig(plays, goal_probs)
 
 @APP.callback(Output(component_id='my-store', component_property='data'),
-              [Input(component_id='get game', component_property='n_clicks')]
+              [Input(component_id='game-dropdown',
+                     component_property='value')]
              )
-def store_game_json(n_clicks):
+def store_game_json(game_id):
     """
     callback function to store the selected game's response from the NHL API in
     my-store as property 'data' in JSON format
     """
-    game_json = None
-    if n_clicks > 0:
-        game_json = io.get_game_response().json()
+    game_json = io.get_game_response(game_id=game_id).json()
     return game_json
 
 @APP.callback(Output(component_id='game-plays', component_property='data'),
@@ -112,28 +116,45 @@ def get_current_plays(n_clicks, game_json):
         return dp.game_to_plays(game_json, cast_fn=lambda x: x)[:n_clicks]
     return None
 
+
 @APP.callback(Output(component_id='step forward',
                      component_property='n_clicks'),
-              [Input(component_id='get game', component_property='n_clicks')])
-def reset_stepper(n_clicks):
+              [Input(component_id='game-dropdown', component_property='value')])
+def reset_stepper(game_id):
     """
     resets to the step forward start of the game when 'get game' is clicked
     """
-    return 0*n_clicks+3
+    if game_id:
+        return 0*game_id
+    return 0
 
-@APP.callback(Output(component_id='debug', component_property='children'),
-              [Input(component_id='game-plays', component_property='data')]
+@APP.callback(Output(component_id='game-dropdown', component_property='options'),
+              [Input(component_id='date-picker', component_property='date')]
              )
-def debug_display(data):
+def update_dropdown(date):
     """
     Callback for debuging app.. accepts some input and displays it in a Div at
     the bottom of the page
     """
-    if data:
-        pass
+    if date:
+        schedule_json = io.get_schedule_json(date)
+        return dp.schedule_to_game_list(schedule_json)
+    return []
+
+@APP.callback(Output(component_id='debug', component_property='children'),
+              [Input(component_id='date-picker', component_property='date')]
+             )
+def debug_display(date):
+    """
+    Callback for debuging app.. accepts some input and displays it in a Div at
+    the bottom of the page
+    """
     #    seed_list = [PLAY_TO_ID[str(STRIPPER(play))] for play in data]
     #    return mf.next_probs(seed_list, MODEL_PREDICTING)
-    return 'Debug output'
+    if date:
+        schedule_json = io.get_schedule_json(date)
+        return str(dp.schedule_to_game_list(schedule_json))
+    return 'No date yet'
 
 if __name__ == '__main__':
     APP.run_server(debug=True)
