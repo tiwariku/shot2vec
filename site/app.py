@@ -124,9 +124,10 @@ def reset_stepper(game_id):
     """
     resets to the step forward start of the game when 'get game' is clicked
     """
+    start_at = 3
     if game_id:
-        return 0*game_id
-    return 0
+        return 0*game_id +start_at
+    return start_at
 
 @APP.callback(Output(component_id='game-dropdown', component_property='options'),
               [Input(component_id='date-picker', component_property='date')]
