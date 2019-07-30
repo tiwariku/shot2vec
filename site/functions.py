@@ -74,11 +74,11 @@ def _zone_prob_traces(plist, cscale=None):
     if not cscale:
         cscale = [[0, 'rgb(255, 255, 255)'], [1, 'rgb(255,0,0)']]
     assert len(plist) == 3
-    ybound = [-42.5, 42.5, 50, 60]
+    ybound = [-42.5, 42.5]#, 50, 60]
     xbounds = [[-100, -25], [-25, 25], [25, 100]]
     traces = []
     for i, prob in enumerate(plist):
-        zvals = [[prob,], [0], [1]]
+        zvals = [[prob,]]#, [0], [1]]
         xbound = xbounds[i]
         traces.append(go.Heatmap(x=xbound,
                                  y=ybound,
@@ -96,7 +96,7 @@ def _plays_to_traces(plays, window=10, bg_opacity=.2):
     """
     helper for make_rink_fig
     """
-    data = {}
+    data = []
     if plays:
         data = [_play_dict_to_plottable(play, bg_opacity)
                 for i, play in enumerate(plays)]
@@ -110,8 +110,10 @@ def _make_rink_fig_layout():
     """
     helper to clean up make_rink_fig
     """
-    layout_dict = dict(title='',
+    layout_dict = dict(#title='Recent Plays',
                        showlegend=False,
+                       paper_bgcolor='rgba(0,0,0,0)',
+                       plot_bgcolor='rgba(0,0,0,0)',
                        #clickmode='event+select',
                        images=[dict(source=RINK_IMAGE_ENCODED,
                                     xref="x",
@@ -123,40 +125,48 @@ def _make_rink_fig_layout():
                                     sizing="stretch",
                                     opacity=1,
                                     layer='above')],
-                       autosize=False
+                       autosize=True,
+                       margin=dict(l=0, r=0, t=0, b=0),
+                       #displayModeBar=False,
                       )
     return go.Layout(**layout_dict)
 
 def make_rink_fig(plays, prob_list=None):
-    '''
+    """
     in:
-        n_steps, the integer numbero of steps to display
-        game_json, json from nhl api of the game
-    '''
+        plays, list of plays, each in nhl api format
+        prop_list, 3-vector of probability for each zone
+    out:
+        fig, the go.Figure object
+    """
     def _curve_prob(prob):
         """
         scaling for appearance
         """
         exp = 2.71828
-        prob_c = .10
+        prob_c = .03
         num = -exp**(-prob/prob_c)+1
         denom = -exp**(-1/prob_c)+1
         return num/denom
 
-    if not prob_list:
-        prob_list = [0, 0, 0]
     layout = _make_rink_fig_layout()
     fig = go.Figure(data=None,
                     layout=layout,)
-    prob_list = [_curve_prob(prob) for prob in prob_list]
-    prob_traces = _zone_prob_traces(prob_list)
-    for trace in prob_traces:
-        fig.add_trace(trace)
 
-    play_traces = _plays_to_traces(plays)
-    for trace in play_traces:
+    if not prob_list:
+        prob_list = [0, 0, 0]
+    #print(prob_list)
+    prob_list = [_curve_prob(prob) for prob in prob_list]
+    #print('\t'+str(prob_list))
+
+    traces = []
+    traces.extend(_zone_prob_traces(prob_list))
+    traces.extend(_plays_to_traces(plays))
+    for trace in traces:
         fig.add_trace(trace)
     fig.update_xaxes(showgrid=False,
+                     scaleanchor='y',
+                     scaleratio=1,
                      zeroline=False,
                      range=[-100, 100],
                      tickvals=[])
@@ -165,3 +175,37 @@ def make_rink_fig(plays, prob_list=None):
                      range=[-42.5, 42.5],
                      tickvals=[])
     return fig
+
+def _get_recent_table_cells(plays, stop=5):
+    """
+    in:
+        plays, a list of plays, each in nhl api format
+        stop, integer number of event descriptions to return
+    out:
+        list of event descriptions
+    """
+    if len(plays) > stop:
+        t_plays = plays[-stop:][::-1]
+    else:
+        t_plays = plays[::-1]
+    descs = [play['result']['description'] for play in t_plays]
+    coords = [_getcoords(play) for play in t_plays]
+    return dict(values=[descs, coords])
+
+def serve_recent_plays_table(plays=None):
+    """
+    in:
+        plays: list of plays, each in nhl api's format
+        return: go.Table object with the 5 most recent plays
+    """
+    layout_dict = dict(title='Recent Plays',
+                       margin=dict(l=0, r=0, t=30, b=0))
+    header = dict(values=['Play', '(x,y)'])
+    cells = dict(values=[[], []])
+    if plays:
+        cells = _get_recent_table_cells(plays)
+    return go.Figure(data=[go.Table(header=header,
+                                    cells=cells)
+                          ],
+                     layout=layout_dict
+                    )

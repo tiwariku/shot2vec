@@ -21,7 +21,9 @@ import corpse_maker as cm
 from baseline_models import MarkovEstimator
 
 
-EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css',
+                        'https://stackpath.bootstrapcdn.com/bootstrap'
+                        +'/4.3.1/css/bootstrap.min.css']
 CORPUS_FILENAME = '../assets/corpi/full_coords_bin_10'
 ASSET_DIR = './assets/coords_bin10/'
 MODEL_WEIGHTS = ASSET_DIR+'model_weights.hdf5'
@@ -37,30 +39,56 @@ BASE_MODEL_DIR = '../baseline_models/markov_zone'
 BASE_MODEL = MarkovEstimator()
 BASE_MODEL = dp.unpickle_it(BASE_MODEL_DIR)
 
-TITLE = html.H1(children='shot2vec')
+TITLE = html.Div(html.Div(children=html.H1(children='shot2vec'),
+                          className='col-3 offset-1'
+                         ),
+                 className='row',
+                )
 
-HOCKEY_RINK = html.Div([html.H2(id='rink_div', children='Recent Plays'),
-                        html.Div(dcc.Graph(id='rink_plot',
-                                           figure=fn.make_rink_fig(None),),
-                                 style={'width':800})
-                       ],
+HOCKEY_RINK = html.Div(html.Div(dcc.Graph(id='rink_plot',
+                                          figure=fn.make_rink_fig(None),
+                                          #style={'width':800,
+                                          #       'height':450,
+                                          #      },
+                                         ),
+                                className='col-8 offset-1'
+                               ),
+                       className='row'
                       )
 
 GET_DATE = dcc.DatePickerSingle(id='date-picker',
-                                date=None
+                                date=None,
+                                #style={'width':200},
                                )
 GAME_DROPDOWN = dcc.Dropdown(id='game-dropdown',
                              options=[],
+                             #style={'width':200}
                             )
 
 STEP_FORWARD_BUTTOM = html.Button(id='step forward',
-                                  children='Step forward',
-                                  n_clicks=3)
+                                  children='Next play',
+                                  n_clicks=3,
+                                  #style={'width':200},
+                                 )
 
-BUTTONS = html.Div(children=[GET_DATE,
-                             GAME_DROPDOWN,
-                             STEP_FORWARD_BUTTOM],
+BUTTONS = html.Div(children=[html.Div(children=GET_DATE,
+                                      className='col-1 offset-1'),
+                             html.Div(children=GAME_DROPDOWN,
+                                      className='col-4 offset-1'),
+                             html.Div(STEP_FORWARD_BUTTOM,
+                                      className='col-1 offset-1')
+                            ],
+                   className='row'
                   )
+
+RECENT_PLAYS = html.Div(
+    html.Div(children=dcc.Graph(id='recent-table',
+                                figure=fn.serve_recent_plays_table()
+                               ),
+             className='col-8 offset-1',
+            ),
+    className='row',
+    )
 
 STORE = dcc.Store(id='my-store')
 GAME_PLAYS = dcc.Store(id='game-plays', data=None)
@@ -68,13 +96,27 @@ GAME_PLAYS = dcc.Store(id='game-plays', data=None)
 DEBUG_OUTPUT = html.Div(id='debug',
                         children='Hi, World')
 
-LAYOUT_KIDS = [TITLE, BUTTONS, HOCKEY_RINK, DEBUG_OUTPUT, STORE, GAME_PLAYS]
-LAYOUT = html.Div(LAYOUT_KIDS)
+LAYOUT_KIDS = [TITLE,
+               BUTTONS,
+               HOCKEY_RINK,
+               RECENT_PLAYS,
+               DEBUG_OUTPUT, STORE, GAME_PLAYS]
+LAYOUT = html.Div(LAYOUT_KIDS, className='contianer')
 
 APP = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 APP.layout = LAYOUT
 
 # callbacks
+@APP.callback(Output(component_id='recent-table', component_property='figure'),
+              [Input(component_id='game-plays', component_property='data')]
+             )
+def update_recent_table(plays):
+    """
+    in: plays, the recent plays list from game_plays stored
+    out: new table, wrapped in a figure, for display
+    """
+    return fn.serve_recent_plays_table(plays)
+
 @APP.callback(Output(component_id='rink_plot', component_property='figure'),
               [Input(component_id='game-plays',
                      component_property='data')]
@@ -116,7 +158,6 @@ def get_current_plays(n_clicks, game_json):
         return dp.game_to_plays(game_json, cast_fn=lambda x: x)[:n_clicks]
     return None
 
-
 @APP.callback(Output(component_id='step forward',
                      component_property='n_clicks'),
               [Input(component_id='game-dropdown', component_property='value')])
@@ -147,7 +188,7 @@ def update_dropdown(date):
              )
 def debug_display(date):
     """
-    Callback for debuging app.. accepts some input and displays it in a Div at
+    allback for debuging app.. accepts some input and displays it in a Div at
     the bottom of the page
     """
     #    seed_list = [PLAY_TO_ID[str(STRIPPER(play))] for play in data]
