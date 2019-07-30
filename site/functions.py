@@ -116,13 +116,22 @@ def make_rink_fig(plays, prob_list=None):
         n_steps, the integer numbero of steps to display
         game_json, json from nhl api of the game
     '''
+    def _curve_prob(prob):
+        """
+        scaling for appearance
+        """
+        exp = 2.71828
+        prob_c = .10
+        num = -exp**(-prob/prob_c)+1
+        denom = -exp**(-1/prob_c)+1
+        return num/denom
+
     if not prob_list:
         prob_list = [0, 0, 0]
     layout = _make_rink_fig_layout()
     fig = go.Figure(data=None,
                     layout=layout,)
-    exp = 2.71828
-    prob_list = [prob**(1/exp) for prob in prob_list]
+    prob_list = [_curve_prob(prob) for prob in prob_list]
     prob_traces = _zone_prob_traces(prob_list)
     for trace in prob_traces:
         fig.add_trace(trace)
