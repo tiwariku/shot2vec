@@ -131,7 +131,9 @@ def test_it(num_games, corpus_filename, estimator):
     '''
     print(f'Corpus: {corpus_filename}\nEstimator: {estimator}')
     corpus = dp.unpickle_it(CORPUS_FILENAME)[:num_games]
-    train_data, test_data = dp.train_test_split(corpus)
+    dp.pad_corpus(corpus)
+    train_data, test_data, _ = dp.tvt_split(corpus,
+                                            fractions=(.799, .2, .001))
     print(f'\tTraining on {len(train_data)} games')
     print(f'\tTesting on {len(test_data)} games')
     train_data = dp.flatten_games(train_data)

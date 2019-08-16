@@ -50,13 +50,14 @@ def strip_name_zone(play):
     return stripped_play
 
 if __name__ == '__main__':
-    START_YEAR = 2010
+    START_YEAR = 2018
     STOP_YEAR = 2018
     BIN_SIZE = 20
-    CORPUS_FILENAME = f'corpus_zone'
+    CORPUS_FILENAME = f'corpus_zone_pad'
     STRIP_FN = strip_name_zone #lambda x: strip_name_zone(x)
     CORPUS = dp.get_corpus(start_year=START_YEAR,
                            stop_year=STOP_YEAR,
                            strip_fn=STRIP_FN)
+    dp.pad_corpus(CORPUS)
     #print('USING ONLY 300 GAMES')
     dp.pickle_it(CORPUS_FILENAME, CORPUS)

@@ -6,10 +6,118 @@ predicting shot2vec RNN models. Data processing is handled separately
 import random
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras.layers import Embedding
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM
 from tensorflow.keras import layers
 import numpy as np
+
+
+def make_rnn_training_model(embedding_matrix,
+                            softmax_weights,
+                            batch_size,
+                            num_steps,
+                            train_embedding=True,
+                            train_softmax=True,):
+    """
+    returns a compiled RNN model with two lstm layers of 
+    size 'embeddeding_size'
+    """
+    cat_dim, emb_dim = embedding_matrix.shape
+    layers = []
+    embed = Embedding(cat_dim,
+                  emb_dim,
+                  batch_input_shape = (batch_size, num_steps),
+                  weights=[embedding_matrix],
+                  trainable=train_embedding)
+    lstm1 = LSTM(emb_dim,
+                 #batch_input_shape = (batch_size, num_steps, embedded_dim),
+                 stateful=True,
+                 return_sequences=True,
+                )
+    lstm2 = LSTM(emb_dim,
+                 #batch_input_shape = (batch_size, num_steps, embedded_dim),
+                 stateful=True,
+                 return_sequences=True,
+                )
+    old_softy = TimeDistributed(Dense(cat_dim, 
+                                      weights=softmax_weights,
+                                      trainable=train_softmax,
+                                      activation='softmax'))
+    model = keras.models.Sequential()
+    model.add(embed)
+    model.add(lstm1)
+    model.add(lstm2)
+    model.add(old_softy)
+    model.compile(optimizer='adam',
+                  loss = 'categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+def make_rnn_predicting_model(hdf5_file, cat_dim, emb_dim):
+    """
+    returns a compiled RNN model with two lstm layers of 
+    size 'embeddeding_size'
+    """
+    #cat_dim, emb_dim = embedding_matrix.shape
+    layers = []
+    embed = Embedding(cat_dim,
+                  emb_dim,
+                  batch_input_shape = (1, None),
+                  #weights=[embedding_matrix],
+                  #trainable=False
+                     )
+    lstm1 = LSTM(emb_dim,
+                 #batch_input_shape = (batch_size, num_steps, embedded_dim),
+                 stateful=True,
+                 return_sequences=True,
+                )
+    lstm2 = LSTM(emb_dim,
+                 #batch_input_shape = (batch_size, num_steps, embedded_dim),
+                 stateful=True,
+                 return_sequences=True,
+                )
+    old_softy = TimeDistributed(Dense(cat_dim, 
+                                      #weights=softmax_weights,
+                                      #trainable=train_softmax,
+                                      activation='softmax'))
+    model = keras.models.Sequential()
+    model.add(embed)
+    model.add(lstm1)
+    model.add(lstm2)
+    model.add(old_softy)
+    model.load_weights(hdf5_file)
+    model.compile(optimizer='adam',
+                  loss = 'categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+def make_decoder_model(embedding_matrix):
+    """
+    makes a compiled variational autoencoder model with 
+    un-trainable embedding layer whose weights are specified by...
+    in:
+        embedding matrix
+    """
+    cat_dim, emb_dim = embedding_matrix.shape
+    embed = Embedding(cat_dim,
+                  emb_dim,
+                  #batch_input_shape = (batch_size, num_steps),
+                  weights=[embedding_matrix],
+                  trainable=False)
+    old_softy = TimeDistributed(Dense(cat_dim, 
+                                      activation='softmax'))
+    model = keras.models.Sequential()
+    model.add(embed)
+    model.add(old_softy)
+    model.compile(optimizer='adam',
+                  loss = 'categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
 
 class KerasBatchGenerator(object):
     '''
